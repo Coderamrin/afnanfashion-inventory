@@ -14,6 +14,7 @@ export default function App() {
   const [date, setDate] = useState("");
   const [entries, setEntries] = useState([]);
   const [total, setTotal] = useState(0);
+  const [printType, setPrintType] = useState("all");
 
   useEffect(() => {
     const saved = localStorage.getItem("productEntries");
@@ -50,30 +51,57 @@ export default function App() {
     setTotal(0);
   };
 
-  const getTotalAmount = () => {
-    return entries.reduce((sum, item) => sum + item.total, 0);
+  const getTotalAmount = (data) => {
+    return data.reduce((sum, item) => sum + item.total, 0);
   };
 
-  const groupedDates = Array.from(new Set(entries.map((e) => e.date)));
-  const getDateColor = (date) => {
-    const dateIndex = groupedDates.findIndex((d) => d === date);
-    return dateIndex % 2 === 0 ? "bg-white" : "bg-indigo-50";
+  const handlePrint = () => {
+    window.print();
   };
+
+  const getFilteredEntries = () => {
+    if (printType === "monthly") {
+      const now = new Date();
+      const month = now.getMonth();
+      const year = now.getFullYear();
+      return entries.filter((e) => {
+        const d = new Date(e.date);
+        return d.getMonth() === month && d.getFullYear() === year;
+      });
+    }
+    return entries;
+  };
+
+  const filteredEntries = getFilteredEntries();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-blue-200 p-4">
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-3xl shadow-2xl border border-indigo-200 space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-extrabold text-indigo-700">
+    <div className="p-4 print:p-0 print:bg-white">
+      <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-lg border print:border-none print:shadow-none">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-indigo-700 print:text-black">
             🛍️ আফনান ফ্যাশন
           </h1>
-          <p className="text-sm text-gray-600 mt-1">দৈনিক মাল হিসাব</p>
+          <div className="flex gap-2 print:hidden">
+            <select
+              className="border px-2 py-1 rounded-md"
+              value={printType}
+              onChange={(e) => setPrintType(e.target.value)}
+            >
+              <option value="all">✅ সব হিসাব</option>
+              <option value="monthly">📆 এই মাসের রিপোর্ট</option>
+            </select>
+            <button
+              onClick={handlePrint}
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded"
+            >
+              🖨️ প্রিন্ট করুন
+            </button>
+          </div>
         </div>
 
-        {/* Input Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:hidden">
           <select
-            className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="p-3 border rounded-lg"
             value={selectedProduct}
             onChange={(e) => setSelectedProduct(e.target.value)}
           >
@@ -86,7 +114,7 @@ export default function App() {
           </select>
 
           <input
-            className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="p-3 border rounded-lg"
             type="number"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
@@ -100,69 +128,63 @@ export default function App() {
           />
 
           <input
-            className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="p-3 border rounded-lg"
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
         </div>
 
-        <div className="text-center">
+        <div className="text-center mt-4 print:hidden">
           <button
-            className="bg-indigo-600 hover:bg-indigo-700 transition-all text-white font-bold py-3 px-6 rounded-xl shadow-md"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-xl"
             onClick={addEntry}
           >
             ✅ যোগ করুন
           </button>
         </div>
 
-        {/* Entry List Section */}
-        <div>
-          <h2 className="text-xl font-semibold mb-3 border-b pb-2 border-gray-300 text-indigo-600">
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold mb-3 border-b pb-2 print:border-black print:text-black text-indigo-600">
             📋 হিসাব তালিকা
           </h2>
-          {entries.length === 0 ? (
-            <p className="text-gray-500 text-center">এখনো কিছু যোগ করা হয়নি</p>
+          {filteredEntries.length === 0 ? (
+            <p className="text-gray-500 text-center">তালিকায় কোন তথ্য নেই</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border border-gray-300 shadow-sm rounded-lg overflow-hidden">
-                <thead className="bg-indigo-200 text-indigo-900 font-semibold">
-                  <tr>
-                    <th className="border p-3">তারিখ</th>
-                    <th className="border p-3">মাল</th>
-                    <th className="border p-3">পরিমাণ</th>
-                    <th className="border p-3">দাম</th>
-                    <th className="border p-3">মোট</th>
+            <table className="w-full text-sm border border-gray-300 print:text-xs">
+              <thead className="bg-indigo-200 print:bg-gray-100">
+                <tr>
+                  <th className="border p-2">তারিখ</th>
+                  <th className="border p-2">মাল</th>
+                  <th className="border p-2">পরিমাণ</th>
+                  <th className="border p-2">দাম</th>
+                  <th className="border p-2">মোট</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredEntries.map((entry) => (
+                  <tr
+                    key={entry.id}
+                    className="even:bg-indigo-50 print:even:bg-white"
+                  >
+                    <td className="border p-2">{entry.date}</td>
+                    <td className="border p-2">{entry.product}</td>
+                    <td className="border p-2">{entry.quantity}</td>
+                    <td className="border p-2">৳{entry.price}</td>
+                    <td className="border p-2 font-semibold">৳{entry.total}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {entries.map((entry) => (
-                    <tr
-                      key={entry.id}
-                      className={`${getDateColor(
-                        entry.date
-                      )} hover:bg-indigo-100 transition-all`}
-                    >
-                      <td className="border p-2">{entry.date}</td>
-                      <td className="border p-2">{entry.product}</td>
-                      <td className="border p-2">{entry.quantity}</td>
-                      <td className="border p-2">৳{entry.price}</td>
-                      <td className="border p-2 font-semibold text-indigo-700">
-                        ৳{entry.total}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
 
-        {/* Total Summary */}
-        {entries.length > 0 && (
-          <div className="text-right text-lg font-bold text-indigo-800 mt-4">
+        {filteredEntries.length > 0 && (
+          <div className="mt-6 text-right font-bold text-lg text-indigo-700 print:text-black">
             মোট টাকার পরিমাণ:{" "}
-            <span className="text-red-600">৳{getTotalAmount()}</span>
+            <span className="text-red-600">
+              ৳{getTotalAmount(filteredEntries)}
+            </span>
           </div>
         )}
       </div>
